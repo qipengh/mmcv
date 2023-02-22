@@ -22,7 +22,17 @@ def scatter(inputs: ScatterInputs,
     def scatter_map(obj):
         if isinstance(obj, Tensor):
             if target_gpus != [-1]:
-                return OrigScatter.apply(target_gpus, None, dim, obj)
+
+                # TODO(XLA): scatter of xla device
+                import os
+                if os.environ.get('USE_XLA'):
+                    import torch_xla
+                    import torch_xla.core.xla_model as xm
+                    obj = obj.to(xm.xla_device())
+                    return obj
+                else:
+                    return OrigScatter.apply(target_gpus, None, dim, obj)
+                # return OrigScatter.apply(target_gpus, None, dim, obj)
             else:
                 # for CPU inference we use self-implemented scatter
                 return Scatter.forward(target_gpus, obj)

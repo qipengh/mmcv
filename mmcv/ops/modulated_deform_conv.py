@@ -320,10 +320,30 @@ class ModulatedDeformConv2dPack(ModulatedDeformConv2d):
         o1, o2, mask = torch.chunk(out, 3, dim=1)
         offset = torch.cat((o1, o2), dim=1)
         mask = torch.sigmoid(mask)
-        return modulated_deform_conv2d(x, offset, mask, self.weight, self.bias,
-                                       self.stride, self.padding,
-                                       self.dilation, self.groups,
-                                       self.deform_groups)
+
+        # TODO(XLA): exec ops on cuda that xla isnot supported
+        import os
+        if os.environ.get('USE_XLA'):
+            import torch_xla
+            import torch_xla.core.xla_model as xm
+            xla_device = xm.xla_device()
+            xm.mark_step()
+            x, offset, mask, weight_tmp,  = x.cuda(), offset.cuda(), mask.cuda(), self.weight.cuda()
+            bias_tmp = self.bias.cuda() if self.bias else self.bias
+            output = modulated_deform_conv2d(x, offset, mask, weight_tmp, bias_tmp,
+                                           self.stride, self.padding,
+                                           self.dilation, self.groups,
+                                           self.deform_groups)
+            return output.cpu().to(xla_device)
+        else:
+            return modulated_deform_conv2d(x, offset, mask, self.weight, self.bias,
+                                           self.stride, self.padding,
+                                           self.dilation, self.groups,
+                                           self.deform_groups)
+        # return modulated_deform_conv2d(x, offset, mask, self.weight, self.bias,
+        #                               self.stride, self.padding,
+        #                               self.dilation, self.groups,
+        #                               self.deform_groups)
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):

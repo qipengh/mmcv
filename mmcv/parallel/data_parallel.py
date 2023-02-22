@@ -36,6 +36,12 @@ class MMDataParallel(DataParallel):
         super().__init__(*args, dim=dim, **kwargs)
         self.dim = dim
 
+        # TODO(XLA): verify model on xla device
+        import os
+        if os.environ.get('USE_XLA'):
+            import torch
+            self.src_device_obj = torch.device('xla:1')
+
     def forward(self, *inputs, **kwargs):
         """Override the original forward function.
 

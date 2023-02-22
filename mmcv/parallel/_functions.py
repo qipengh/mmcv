@@ -64,10 +64,37 @@ def get_input_device(input: Union[List, Tensor]) -> int:
         raise Exception(f'Unknown type {type(input)}.')
 
 
+# TODO(XLA): scatter of xla device
+import os
+if os.environ.get('USE_XLA'):
+    import torch_xla
+    import torch_xla.core.xla_model as xm
+
+def scatter_xla(input: Union[List, Tensor],
+            devices: List) -> List:
+    """Scatters tensor across multiple GPUs."""
+    if isinstance(input, list):
+        outputs = [
+            scatter_xla(_input, devices) for _input in input
+        ]
+        return outputs
+    elif isinstance(input, Tensor):
+        output = input.contiguous()
+        output = output.to(xm.xla_device())
+        return output
+    else:
+        raise Exception(f'Unknown type {type(input)}.')
+
 class Scatter:
 
     @staticmethod
     def forward(target_gpus: List[int], input: Union[List, Tensor]) -> tuple:
+
+        # TODO(XLA): scatter of xla device
+        if os.environ.get('USE_XLA'):
+            outputs = scatter_xla(input, target_gpus)
+            return tuple(outputs) if isinstance(outputs, list) else (outputs, )
+
         input_device = get_input_device(input)
         streams = None
         if input_device == -1 and target_gpus != [-1]:

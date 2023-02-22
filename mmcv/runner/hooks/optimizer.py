@@ -70,7 +70,17 @@ class OptimizerHook(Hook):
                 # Add grad norm to the logger
                 runner.log_buffer.update({'grad_norm': float(grad_norm)},
                                          runner.outputs['num_samples'])
-        runner.optimizer.step()
+
+        # TODO(XLA): optimizer_step
+        import os
+        if os.environ.get('USE_XLA'):
+            import torch_xla
+            import torch_xla.core.xla_model as xm
+            xm.optimizer_step(runner.optimizer)
+            xm.mark_step()
+        else:
+            runner.optimizer.step()
+        # runner.optimizer.step()
 
     def detect_anomalous_parameters(self, loss: Tensor, runner) -> None:
         logger = runner.logger
