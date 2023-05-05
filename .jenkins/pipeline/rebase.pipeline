@@ -1,0 +1,26 @@
+library "cambricon-pipe-lib@master"
+
+// REBASE_BRANCH NAME TOKEN
+cnpipe {
+    checkUTReport false
+    checkMRUpvotes false
+    task('rebase_mmcv') {
+        container {
+            image "yellow.hub.cambricon.com/mmlab/mirror:v0.1"
+        }
+        resReq {
+            reqMemory '30Gi'
+            lmtMemory '50Gi'
+            reqCpu 32
+            lmtCpu 32
+        }
+        script '''
+            set -e
+            git clone http://${NAME}:${TOKEN}@gitlab.software.cambricon.com/neuware/software/framework/openmmlab/mmcv.git -b jenkins
+            pushd mmcv/.jenkins/script
+                ./run_rebase_mmcv.sh ${REBASE_BRANCH} ${NAME} ${TOKEN}
+            popd
+        '''
+    }
+}
+
