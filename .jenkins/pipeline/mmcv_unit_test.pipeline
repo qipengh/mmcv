@@ -53,7 +53,7 @@ def unit_test(docker_image) {
                 modifyShm true
             }
         }
-        unstash 'mmcv' 
+        unstash 'mmcv'
         script '''
             set -e
             pushd mmcv
