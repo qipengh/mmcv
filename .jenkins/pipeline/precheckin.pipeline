@@ -1,0 +1,13 @@
+library "cambricon-pipe-lib@master"
+
+cnpipe {
+    checkUTReport false
+    checkMRUpvotes false
+
+    trigger("unit_test") {
+      jobName 'mmcv_unit_test'
+      waitForComplete true
+      propagateErr true
+      parameters string(name:"mmcv_BRANCH", value:this.env.gitlabSourceBranch)
+    }
+}

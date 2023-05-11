@@ -1,4 +1,7 @@
 library "cambricon-pipe-lib@master"
+
+// param: MMCV_BRANCH, DOCKER_IMAGE, CARD_TYPE, DRIVER_VERSION, NODE_LABEL
+
 cnpipe {
     uploadTestResult 'master', false
     // 获取mmcv仓库代码
@@ -46,16 +49,17 @@ def unit_test(docker_image) {
                 lmtMlus 1
                 reqCpu 40
                 lmtCpu 40
-                reqMemory '20Gi'
-                lmtMemory '20Gi'
-                reqEphemeralStorage '80Gi'
-                lmtEphemeralStorage '80Gi'
+                reqMemory '40Gi'
+                lmtMemory '40Gi'
+                reqEphemeralStorage '96Gi'
+                lmtEphemeralStorage '96Gi'
                 modifyShm true
             }
         }
         unstash 'mmcv'
         script '''
             set -e
+            set -x
             pushd mmcv
                 source /torch/venv3/pytorch/bin/activate
                 MMCV_WITH_OPS=1 pip install -e .

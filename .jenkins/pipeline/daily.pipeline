@@ -1,0 +1,16 @@
+library "cambricon-pipe-lib@master"
+
+// param: MMCV_BRANCH, DOCKER_IMAGE, CARD_TYPE, DRIVER_VERSION, NODE_LABEL
+
+cnpipe {
+    trigger("unit_test") {
+      jobName 'mmcv_unit_test'
+      waitForComplete true
+      propagateErr true
+      parameters string(name:"mmcv_BRANCH", value:this.params.MMCV_BRANCH),
+                 string(name:"DOCKER_IMAGE", value:this.params.DOCKER_IMAGE),
+                 string(name:"CARD_TYPE", value:this.params.CARD_TYPE),
+                 string(name:"DRIVER_VERSION", value:this.params.DRIVER_VERSION),
+                 string(name:"NODE_LABEL", value:this.params.NODE_LABEL)
+    }
+}
