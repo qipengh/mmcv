@@ -60,7 +60,11 @@ def unit_test(docker_image) {
         script '''
             set -e
             set -x
+            pushd /tmp
+                git clone http://${NAME}:${TOKEN}@gitlab.software.cambricon.com/neuware/software/framework/openmmlab/mmcv.git -b jenkins
+            popd
             pushd mmcv
+                cp -r /tmp/mmcv/tests/test_mlu_ops/ tests/
                 source /torch/venv3/pytorch/bin/activate
                 MMCV_WITH_OPS=1 pip install -e .
                 pip install -r requirements/test.txt
