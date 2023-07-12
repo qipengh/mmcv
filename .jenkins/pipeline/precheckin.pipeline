@@ -4,17 +4,37 @@ cnpipe {
     checkUTReport false
     checkMRUpvotes false
     uploadTestResult 'master', false
-
+    if (env.gitlabTargetBranch == "jenkins") {
+        task('cloneAnotherBranch', cloneAnotherBranch())
+    }
     // 获取torch1.9 daily docker
     def docker_image = package.properties("http://daily.software.cambricon.com/daily/pytorch/docker/catch_1.9_develop/ubuntu18.04/3.7/latest").get("docker")
     if (this.DOCKER_IMAGE) {
         docker_image = this.DOCKER_IMAGE
     }
     // 运行单元测试
-    task('run_unit_test', unit_test(docker_image))
+    task('run_unit_test_main', unit_test(docker_image, "main"))
+    task('run_unit_test_1.x', unit_test(docker_image, "1.x"))
 }
 
-def unit_test(docker_image) {
+def cloneAnotherBranch() {
+    return {
+        stage "clone"
+        runOnCloud true  // 在k8s上测试
+        stash "mmcv","mmcv"
+        resReq {
+            reqCpu 1
+            lmtCpu 1
+            reqMemory '1Gi'
+            lmtMemory '2Gi'
+        }
+        script '''
+        git clone ssh://git@gitlab.software.cambricon.com:2289/neuware/software/framework/openmmlab/mmcv.git -b main 
+        '''
+    }
+}
+
+def unit_test(docker_image, branch_name) {
     return {
         stage 'test_mmcv_ops'
         timeout 120
@@ -49,11 +69,26 @@ def unit_test(docker_image) {
                 modifyShm true
             }
         }
-        unstash 'CI_MR_PROJ'
+        envVariable 'BRANCH_NAME', branch_name
+        if (env.gitlabTargetBranch == "jenkins") {
+            unstash "mmcv"
+        } else {
+            unstash 'CI_MR_PROJ'
+        }
         script '''
             set -e
             set -x
+            pushd /tmp
+                git clone http://${NAME}:${TOKEN}@gitlab.software.cambricon.com/neuware/software/framework/openmmlab/mmcv.git -b jenkins
+            popd
             pushd mmcv
+                if [[ ${BRANCH_NAME} == "1.x" ]]
+                then
+                    git checkout 1.x
+                else
+                    git checkout main
+                fi
+                cp -r /tmp/mmcv/tests/test_mlu_ops/ tests/
                 source /torch/venv3/pytorch/bin/activate
                 MMCV_WITH_OPS=1 pip install -e .
                 pip install -r requirements/test.txt
