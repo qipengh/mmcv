@@ -71,15 +71,17 @@ def unit_test(docker_image, branch_name) {
         }
         envVariable 'BRANCH_NAME', branch_name
         if (env.gitlabTargetBranch == "jenkins") {
+            envVariable 'MLU_TEST_BRANCH', env.gitlabSourceBranch
             unstash "mmcv"
         } else {
+            envVariable 'MLU_TEST_BRANCH', "jenkins"
             unstash 'CI_MR_PROJ'
         }
         script '''
             set -e
             set -x
             pushd /tmp
-                git clone http://${NAME}:${TOKEN}@gitlab.software.cambricon.com/neuware/software/framework/openmmlab/mmcv.git -b jenkins
+                git clone http://${NAME}:${TOKEN}@gitlab.software.cambricon.com/neuware/software/framework/openmmlab/mmcv.git -b ${MLU_TEST_BRANCH}
             popd
             pushd mmcv
                 if [[ ${BRANCH_NAME} == "1.x" ]]
