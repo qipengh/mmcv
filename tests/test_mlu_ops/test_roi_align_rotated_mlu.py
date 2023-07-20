@@ -8,9 +8,47 @@ from mmcv.ops import RoIAlignRotated, roi_align_rotated
 
 from torch.testing._internal.common_utils import \
     (TestCase, run_tests)
+from torch.autograd import gradcheck
 
-class TestRoiAlignMLU(TestCase):
-    def _sample_inputs_rotated_feature_align(self, device, dtype):
+inputs = [([[[[1., 2.], [3., 4.]]]],
+           [[0., 0.5, 0.5, 1., 1., 0]]),
+          ([[[[1., 2.], [3., 4.]]]],
+           [[0., 0.5, 0.5, 1., 1., np.pi / 2]]),
+          ([[[[1., 2.], [3., 4.]],
+             [[4., 3.], [2., 1.]]]],
+           [[0., 0.5, 0.5, 1., 1., 0]]),
+          ([[[[1., 2., 5., 6.], [3., 4., 7., 8.],
+              [9., 10., 13., 14.], [11., 12., 15., 16.]]]],
+           [[0., 1.5, 1.5, 3., 3., 0]]),
+          ([[[[1., 2., 5., 6.], [3., 4., 7., 8.],
+              [9., 10., 13., 14.], [11., 12., 15., 16.]]]],
+           [[0., 1.5, 1.5, 3., 3., np.pi / 2]])]
+outputs = [([[[[1.0, 1.25], [1.5, 1.75]]]],
+            [[[[3.0625, 0.4375], [0.4375, 0.0625]]]]),
+           ([[[[1.5, 1], [1.75, 1.25]]]],
+            [[[[3.0625, 0.4375], [0.4375, 0.0625]]]]),
+           ([[[[1.0, 1.25], [1.5, 1.75]],
+              [[4.0, 3.75], [3.5, 3.25]]]],
+            [[[[3.0625, 0.4375], [0.4375, 0.0625]],
+              [[3.0625, 0.4375], [0.4375, 0.0625]]]]),
+           ([[[[1.9375, 4.75], [7.5625, 10.375]]]],
+            [[[[0.47265625, 0.42968750, 0.42968750, 0.04296875],
+               [0.42968750, 0.39062500, 0.39062500, 0.03906250],
+               [0.42968750, 0.39062500, 0.39062500, 0.03906250],
+               [0.04296875, 0.03906250, 0.03906250, 0.00390625]]]]),
+           ([[[[7.5625, 1.9375], [10.375, 4.75]]]],
+            [[[[0.47265625, 0.42968750, 0.42968750, 0.04296875],
+               [0.42968750, 0.39062500, 0.39062500, 0.03906250],
+               [0.42968750, 0.39062500, 0.39062500, 0.03906250],
+               [0.04296875, 0.03906250, 0.03906250, 0.00390625]]]])]
+
+pool_h = 2
+pool_w = 2
+spatial_scale = 1.0
+sampling_ratio = 2
+
+class TestRoiAlignRotatedMLU(TestCase):
+    def _sample_inputs_roi_align_rotated(self, device, dtype):
         test_cases = (
             ((1, 4, 7, 1), (1, 6)), 
             ((9, 27, 24, 1), (1, 6)),
@@ -24,10 +62,24 @@ class TestRoiAlignMLU(TestCase):
             samples_rois.append(b)
         return samples_input, samples_rois
     
-    def test_roi_align(self, device='mlu'):
+    def test_roialign_rotated_gradcheck(self, device='mlu'):
+        for case in inputs:
+            np_input = np.array(case[0])
+            np_rois = np.array(case[1])
+
+            x = torch.tensor(
+                np_input, dtype=torch.float, device=device, requires_grad=True)
+            rois = torch.tensor(np_rois, dtype=torch.float, device=device)
+
+            froipool = RoIAlignRotated((pool_h, pool_w), spatial_scale,
+                                    sampling_ratio)
+            
+            gradcheck(froipool, (x, rois), eps=1e-3, atol=1e-3)
+
+    def test_roi_align_rotated(self, device='mlu'):
         dtype_list = [torch.float]
         for dtype in dtype_list:
-            inputs, roises= self._sample_inputs_rotated_feature_align(device='cpu', dtype=dtype)
+            inputs, roises= self._sample_inputs_roi_align_rotated(device='cpu', dtype=dtype)
             for input, rois in zip(inputs, roises):
                 rois[:, 3:5] += rois[:, 1:3]
                 input_mlu = input.to(device)
@@ -54,6 +106,5 @@ class TestRoiAlignMLU(TestCase):
                 assert torch.allclose(
                     input_mlu.grad.cpu(), input.grad, atol=1e-3)
     
-
 if __name__ == '__main__':
     run_tests()
