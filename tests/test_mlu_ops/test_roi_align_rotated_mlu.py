@@ -105,6 +105,32 @@ class TestRoiAlignRotatedMLU(TestCase):
                                 
                 assert torch.allclose(
                     input_mlu.grad.cpu(), input.grad, atol=1e-3)
+                
+    @unittest.skip("not test")
+    def test_roi_align_rotated_invalid_shape(self, device='mlu'):
+        input = make_tensor((1, 4, 7, 1), device=device, dtype=torch.float, requires_grad=False, low=-100, high=100, seed=90)
+        rois = make_tensor((1, 5), device=device, dtype=torch.float, requires_grad=False, low=0, high=10, seed=90)
+        input_mlu = input.to(device)
+        rois_mlu = rois.to(device)
+        input_mlu.requires_grad = True
+        ref_msg = ""
+        with self.assertRaisesRegex(AssertionError, ref_msg):
+            output_mlu = roi_align_rotated(input_mlu, rois_mlu, (pool_h, pool_w), spatial_scale,
+                            sampling_ratio, True)
+            output_mlu.backward(torch.ones_like(output_mlu))
+                
+    @unittest.skip("not test")
+    def test_roi_align_rotated_invalid_type(self, device='mlu'):
+        input = make_tensor((1, 4, 7, 1), device=device, dtype=torch.double, requires_grad=False, low=-100, high=100, seed=90)
+        rois = make_tensor((1, 6), device=device, dtype=torch.double, requires_grad=False, low=0, high=10, seed=90)
+        input_mlu = input.to(device)
+        rois_mlu = rois.to(device)
+        input_mlu.requires_grad = True
+        ref_msg = ""
+        with self.assertRaisesRegex(AssertionError, ref_msg):
+            output_mlu = roi_align_rotated(input_mlu, rois_mlu, (pool_h, pool_w), spatial_scale,
+                            sampling_ratio, True)
+            output_mlu.backward(torch.ones_like(output_mlu))
     
 if __name__ == '__main__':
     run_tests()
