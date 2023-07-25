@@ -114,6 +114,7 @@ class TestRoiAlignRotatedMLU(TestCase):
         rois_mlu = rois.to(device)
         input_mlu.requires_grad = True
         ref_msg = ""
+        # MLU roi_align_rotated op have no shape check, set ref_msg to empty now
         with self.assertRaisesRegex(AssertionError, ref_msg):
             output_mlu = roi_align_rotated(input_mlu, rois_mlu, (pool_h, pool_w), spatial_scale,
                             sampling_ratio, True)

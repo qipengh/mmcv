@@ -130,6 +130,7 @@ class TestNMSRotatedMLU(TestCase):
         score = make_tensor((29, ), device=device, dtype=torch.float, requires_grad=False, low=0, high=10, seed=23).to('mlu')
         label = make_tensor((29, ), device=device, dtype=torch.int, requires_grad=False, low=0, high=2, seed=23).type(torch.float).to('mlu')
         ref_msg = ""
+        # MLU nms_rotated op have no shape check, set ref_msg to empty now
         with self.assertRaisesRegex(AssertionError, ref_msg):
             nms_rotated(box, score, 0.5, label)
     
