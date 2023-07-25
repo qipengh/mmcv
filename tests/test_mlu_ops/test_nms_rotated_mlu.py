@@ -24,7 +24,7 @@ class TestNMSRotatedMLU(TestCase):
             samples_label.append(b)
         return samples_box, samples_label
     
-    def test_ml_nms_rotated(self, device='mlu'):
+    def test_nms_rotated(self, device='mlu'):
         dtype_list = [torch.float]
         for dtype in dtype_list:
             boxes, labels = self._sample_inputs_nms_rotated(device='cpu', dtype=dtype)
@@ -138,6 +138,7 @@ class TestNMSRotatedMLU(TestCase):
         box = make_tensor((34, 6), device=device, dtype=torch.double, requires_grad=False, low=0, high=10, seed=23).to('mlu')
         label = make_tensor((34, ), device=device, dtype=torch.int, requires_grad=False, low=0, high=2, seed=23).type(torch.float).to('mlu')
         ref_msg = ""
+        # MLU nms_rotated op have no dtype check, set ref_msg to empty now
         with self.assertRaisesRegex(AssertionError, ref_msg):
             nms_rotated(box[:, :5], box[:, -1], 0.5, label)
 

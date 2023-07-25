@@ -70,6 +70,7 @@ class TestRotatedFeatureAlignMLU(TestCase):
         bbox_mlu = bbox.to(device)
         feature_mlu.requires_grad = True
         ref_msg = ""
+        # MLU rotated_feature_align op have no dtype check, set ref_msg to empty now
         with self.assertRaisesRegex(AssertionError, ref_msg):
             output_mlu = rotated_feature_align(
                 feature_mlu, bbox_mlu, spatial_scale=1 / 8, points=1)

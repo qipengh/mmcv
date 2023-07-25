@@ -115,6 +115,7 @@ class TestPSAMaskMLU(TestCase):
         label_mlu = label.to(device)
         psamask_distribute_mlu = PSAMask('distribute', (29, 22)).to(device)
         ref_msg = ""
+        # MLU PSAMask op have no dtype check, set ref_msg to empty now
         with self.assertRaisesRegex(AssertionError, ref_msg):
             test_loss = Loss()
             output_mlu = psamask_distribute_mlu(input_mlu)

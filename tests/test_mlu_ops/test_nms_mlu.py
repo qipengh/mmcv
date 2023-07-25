@@ -80,6 +80,7 @@ class TestNMSMLU(TestCase):
         box_mlu = box.to(device)
         score_mlu = score.to(device)
         ref_msg = ""
+        # MLU nms op have no dtype check, set ref_msg to empty now
         with self.assertRaisesRegex(AssertionError, ref_msg):
             nms(box_mlu, score_mlu, iou_threshold=0.3, offset=0)
 

@@ -58,6 +58,7 @@ class TestVoxelizationMLU(TestCase):
     def test_voxelization_invalid_type(self, device='mlu'):
         point = make_tensor((800, 4), device=device, dtype=torch.half, requires_grad=False, low=0, high=10, seed=23).to('mlu')
         ref_msg = ""
+        # MLU Voxelization op have no dtype check, set ref_msg to empty now
         with self.assertRaisesRegex(AssertionError, ref_msg):
             voxel_size = [0.5, 0.5, 0.5]
             point_cloud_range = [0, -40, -3, 70.4, 40, 1]
