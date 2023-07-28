@@ -6,12 +6,6 @@ cnpipe {
     uploadTestResult 'master', false
     if (env.gitlabTargetBranch == "jenkins") {
         task('cloneAnotherBranch', cloneAnotherBranch())
-    } else {
-        task('clone_mmcv','CloneTask'){
-            stage 'clone'
-            branch  this.gitlabTargetBranch
-            url 'ssh://git@gitlab.software.cambricon.com:2289/neuware/software/framework/openmmlab/mmcv.git'
-        }
     }
     // 获取torch1.9 daily docker
     def docker_image = package.properties("http://daily.software.cambricon.com/daily/pytorch/docker/catch_1.9_develop/ubuntu18.04/3.7/latest").get("docker")
