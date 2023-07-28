@@ -6,6 +6,12 @@ cnpipe {
     uploadTestResult 'master', false
     if (env.gitlabTargetBranch == "jenkins") {
         task('cloneAnotherBranch', cloneAnotherBranch())
+    } else {
+        task('clone_mmcv','CloneTask'){
+            stage 'clone'
+            branch  this.gitlabTargetBranch
+            url 'ssh://git@gitlab.software.cambricon.com:2289/neuware/software/framework/openmmlab/mmcv.git'
+        }
     }
     // 获取torch1.9 daily docker
     def docker_image = package.properties("http://daily.software.cambricon.com/daily/pytorch/docker/catch_1.9_develop/ubuntu18.04/3.7/latest").get("docker")
@@ -13,8 +19,15 @@ cnpipe {
         docker_image = this.DOCKER_IMAGE
     }
     // 运行单元测试
-    task('run_unit_test_main', unit_test(docker_image, "main"))
-    task('run_unit_test_1.x', unit_test(docker_image, "1.x"))
+    if (env.gitlabTargetBranch == "main") {
+        task('run_unit_test_main', unit_test(docker_image, "main"))
+    }
+    else if (env.gitlabTargetBranch == "1.x") {
+        task('run_unit_test_1.x', unit_test(docker_image, "1.x"))
+    } else {
+        task('run_unit_test_main', unit_test(docker_image, "main"))
+        task('run_unit_test_1.x', unit_test(docker_image, "1.x"))
+    }
 }
 
 def cloneAnotherBranch() {
@@ -75,6 +88,7 @@ def unit_test(docker_image, branch_name) {
             unstash "mmcv"
         } else {
             envVariable 'MLU_TEST_BRANCH', "jenkins"
+            envVariable 'MLU_SOURCE_BRANCH', env.gitlabSourceBranch
             unstash 'CI_MR_PROJ'
         }
         script '''
@@ -89,6 +103,10 @@ def unit_test(docker_image, branch_name) {
                     git checkout 1.x
                 else
                     git checkout main
+                fi
+                if [[ ${MLU_TEST_BRANCH} == "jenkins" ]]
+                then
+                    git checkout $MLU_SOURCE_BRANCH 
                 fi
                 cp -r /tmp/mmcv/tests/test_mlu_ops/ tests/
                 source /torch/venv3/pytorch/bin/activate
