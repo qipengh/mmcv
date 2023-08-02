@@ -49,6 +49,28 @@ class TestRoIPointPool3dMLU(TestCase):
         return input_1, input_2, input_3,\
             expect_output, expect_empty_flag
     
+    def test_large_scale_output_shape_1(self, device='mlu', num_sampled_points=512):
+        points = torch.rand((1, 16384, 3), device=device, dtype=torch.float)
+        feats = torch.rand((1, 16384, 128), device=device, dtype=torch.float)
+        rois = torch.rand((1, 128, 7), device=device, dtype=torch.float)
+
+        roipoint_pool3d = RoIPointPool3d(num_sampled_points)
+
+        roi_feat, empty_flag = roipoint_pool3d(points, feats, rois)
+        assert roi_feat.size() == (1, 128, 512, 131)
+        assert empty_flag.size() == (1, 128)
+
+    def test_large_scale_output_shape_2(self, device='mlu', num_sampled_points=512):
+        points = torch.rand((32, 16384, 3), device=device, dtype=torch.float)
+        feats = torch.rand((32, 16384, 128), device=device, dtype=torch.float)
+        rois = torch.rand((32, 128, 7), device=device, dtype=torch.float)
+
+        roipoint_pool3d = RoIPointPool3d(num_sampled_points)
+
+        roi_feat, empty_flag = roipoint_pool3d(points, feats, rois)
+        assert roi_feat.size() == (32, 128, 512, 131)
+        assert empty_flag.size() == (32, 128)
+    
     def _test_roipoint_pool3d(self, address="", device='mlu', num_sampled_points=512):
         dtype_list = [torch.float]
         input_1, input_2, input_3, expect_output, expect_empty_flag  = self._read_io_from_txt(address)
@@ -59,6 +81,9 @@ class TestRoIPointPool3dMLU(TestCase):
                 input_2, dtype=dtype, device=device)
             rois = torch.tensor(
                 input_3, dtype=dtype, device=device)
+            print(points.shape)
+            print(feats.shape)
+            print(rois.shape)
             
             roipoint_pool3d = RoIPointPool3d(num_sampled_points)
 
@@ -75,6 +100,7 @@ class TestRoIPointPool3dMLU(TestCase):
     def test_roipoint_pool3d_allclose(self, device='mlu'):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._test_roipoint_pool3d(address=dir_path + "/testcase_samples/roipoint_pool3d/roipoint_pool3d_samples_0.txt", device=device, num_sampled_points=512)
+        self._test_roipoint_pool3d(address=dir_path + "/testcase_samples/roipoint_pool3d/roipoint_pool3d_samples_1.txt", device=device, num_sampled_points=256)
 
 if __name__ == '__main__':
     run_tests()
