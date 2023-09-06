@@ -60,6 +60,7 @@ def unit_test(docker_image) {
         script '''
             set -e
             set -x
+            sed -i '/douban/d' /root/.config/pip/pip.conf
             pushd mmcv
                 source /torch/venv3/pytorch/bin/activate
                 MMCV_WITH_OPS=1 pip install -e .
