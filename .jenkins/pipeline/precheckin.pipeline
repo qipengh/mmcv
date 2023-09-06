@@ -88,6 +88,7 @@ def unit_test(docker_image, branch_name) {
         script '''
             set -e
             set -x
+            sed -i '/douban/d' /root/.config/pip/pip.conf
             pushd /tmp
                 git clone http://${NAME}:${TOKEN}@gitlab.software.cambricon.com/neuware/software/framework/openmmlab/mmcv.git -b ${MLU_TEST_BRANCH}
             popd
