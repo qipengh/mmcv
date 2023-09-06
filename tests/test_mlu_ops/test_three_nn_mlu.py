@@ -32,5 +32,22 @@ class TestThreeNNMLU(TestCase):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._test_three_nn(address=dir_path + "/testcase_samples/three_nn/three_nn_samples.txt")
 
+    def test_three_nn_shape(self, device='mlu'):
+        shape_list = [((2, 256, 3), (2 , 64, 3)),
+                      ((2, 4096, 3), (2, 1024, 3)),
+                      ((2, 16384, 3), (2, 4096, 3)),
+                      ((3, 4096, 3), (3, 1024, 3)),
+                      ((3, 16384, 3), (3, 4096, 3))]
+        for shape in shape_list:
+            shape1, shape2 = shape
+            unknown = torch.rand(shape1, device=device, dtype=torch.float)
+            known = torch.rand(shape2, device=device, dtype=torch.float)
+
+            dist, idx = three_nn(unknown, known)
+
+            assert dist.size() == shape1
+            assert idx.size() == shape1
+
+
 if __name__ == '__main__':
     run_tests()
